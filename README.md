@@ -1,49 +1,81 @@
-# HorNet 🐝 — Kali Linux CTF AI Copilot
+<div align="center">
 
-**`hnet`** is a terminal-native AI copilot for CTF work on Kali Linux.  
-It drives an agentic reasoning loop over a registry of CTF tools, gates dangerous actions, and escalates to live web search when no tool covers the need.
+# 🐝 HorN3t
 
----
+**Kali Linux Terminal AI Copilot for CTF Work**
 
-## Features
+[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)](https://python.org)
+[![Platform](https://img.shields.io/badge/Platform-Kali%20Linux-purple?style=for-the-badge&logo=linux)](https://kali.org)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![Zero Deps](https://img.shields.io/badge/Dependencies-Zero-brightgreen?style=for-the-badge)](pyproject.toml)
 
-| Capability | Detail |
-|---|---|
-| **Model backends** | Local Ollama · OpenRouter · any OpenAI-compatible endpoint |
-| **Tool registry** | 16 tools across 4 CTF phases (recon → enum → exploit → post-exploit) |
-| **Risk gating** | SAFE tools auto-run; CONFIRM tools (hydra, sqlmap, …) require explicit `[p]roceed` |
-| **Escalation chain** | Web search → model proposes command → `[a]ccept` gate → run once → log |
-| **Session persistence** | JSON state survives restarts; resume with `/load` or auto-prompt |
-| **Zero runtime deps** | Pure Python 3 stdlib — only `urllib`, `subprocess`, `json` |
+> AI-powered terminal copilot that drives nmap, gobuster, hydra, sqlmap and more — with risk gating, session persistence, and a web-search escalation chain.
+
+</div>
 
 ---
 
-## Quick Start
+## ⚡ Install (Kali Linux)
 
-### 1. Clone & Install
+### Option A — Git clone (recommended)
 
 ```bash
-git clone https://github.com/you/hornet.git
-cd hornet
+# 1. Clone the repo
+git clone https://github.com/Ghost-101-ui/HorN3t.git
+cd HorN3t
+
+# 2. Install (zero runtime dependencies — pure Python stdlib)
 pip install -e .
-```
 
-This registers the `hnet` CLI entry point.
-
----
-
-### 2A. Local — Ollama
-
-```bash
-# Install Ollama (https://ollama.ai)
-ollama pull llama3          # or mistral, codellama, etc.
-
-# Run HorNet (defaults to local Ollama)
+# 3. Run
 hnet
 ```
 
-Or with a config file (`hnet.config.json` in CWD or `~`):
+> If `hnet` is not found after install, run it as:
+> ```bash
+> python -m hornet.cli
+> ```
+> Or add pip's script dir to PATH:
+> ```bash
+> echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+> ```
 
+---
+
+### Option B — One-liner setup
+
+```bash
+git clone https://github.com/Ghost-101-ui/HorN3t.git && cd HorN3t && pip install -e . && hnet
+```
+
+---
+
+## 🔧 Backend Setup
+
+HorN3t works with **local Ollama** (free, offline) or **OpenRouter** (cloud models).  
+Pick one — no other dependencies needed.
+
+---
+
+### 🖥️ Local — Ollama (Free, runs on your machine)
+
+```bash
+# 1. Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 2. Pull a model (choose one)
+ollama pull llama3          # recommended — fast + smart
+ollama pull mistral         # lighter alternative
+ollama pull codellama       # code-focused
+
+# 3. Start Ollama (auto-starts on most systems, or run manually)
+ollama serve &
+
+# 4. Run HorN3t in local mode (default)
+hnet --local --target 10.10.10.5
+```
+
+**Config file** — create `hnet.config.json` in your project folder:
 ```json
 {
   "mode": "local",
@@ -54,167 +86,222 @@ Or with a config file (`hnet.config.json` in CWD or `~`):
 }
 ```
 
-### 2B. Online — OpenRouter
+---
+
+### 🌐 Online — OpenRouter (Cloud, smarter models)
 
 ```bash
-export HNET_MODE=online
-export HNET_API_KEY=sk-or-xxxx
-export HNET_MODEL=anthropic/claude-3-haiku   # or any OpenRouter model
+# 1. Get a free API key → https://openrouter.ai/keys
 
-hnet
+# 2. Set env vars
+export HNET_MODE=online
+export HNET_API_KEY=sk-or-xxxxxxxxxxxxxxxxxxxxxxxx
+export HNET_MODEL=anthropic/claude-3-haiku    # or: meta-llama/llama-3-8b-instruct:free
+
+# 3. Run
+hnet --online --target 10.10.10.5
 ```
 
-Or in `hnet.config.json`:
-
+**Or** add to `hnet.config.json`:
 ```json
 {
   "mode": "online",
   "openrouter": {
     "base_url": "https://openrouter.ai/api/v1",
     "model": "anthropic/claude-3-haiku",
-    "api_key": "sk-or-xxxx"
+    "api_key": "sk-or-xxxxxxxxxxxxxxxxxxxxxxxx"
   }
 }
 ```
 
 ---
 
-## CLI Flags
+## 🚀 Usage
 
-```
-hnet                          interactive REPL (auto-resumes latest session)
-hnet "scan 10.10.10.5"        one-shot task
-hnet --target 10.10.10.5      pre-set target
-hnet --local                  force local Ollama
-hnet --online                 force OpenRouter
-hnet --model llama3:70b       override model
-hnet --phase exploitation     skip to a phase
-hnet --load <session-id>      resume specific session
-hnet --new                    force a fresh session
-hnet --list-sessions          list all saved sessions
-hnet --debug                  verbose output
+```bash
+# Interactive mode (auto-resumes last session)
+hnet
+
+# Set target and start
+hnet --target 10.10.10.5
+
+# Force a new session
+hnet --new --target 10.10.10.5
+
+# Skip to a specific phase
+hnet --target 10.10.10.5 --phase exploitation
+
+# One-shot task (non-interactive)
+hnet --target 10.10.10.5 "scan all ports and find web services"
+
+# Resume a previous session
+hnet --list-sessions
+hnet --load <session-id>
+
+# Force local or online backend
+hnet --local
+hnet --online
+
+# Override model at runtime
+hnet --model llama3:70b
 ```
 
 ---
 
-## Interactive Commands
+## 💬 Interactive Commands
 
-Once inside the REPL:
+Once inside the HorN3t shell, type these anytime:
 
-| Command | Description |
+| Command | What it does |
 |---|---|
-| `/ask <question>` | Query session state: ports, findings, why a tool was chosen |
-| `/state` | Print full session summary |
-| `/phase <name>` | Override CTF phase manually |
-| `/raw` | Show full raw output of last tool run |
-| `/findings` | List all tool findings so far |
-| `/improvised` | Show web-search escalation log |
-| `/history` | Show conversation history |
-| `/sessions` | List saved sessions |
+| `/ask <question>` | Ask about findings, ports, why a tool was chosen |
+| `/state` | Full session summary (target, phase, ports, services) |
+| `/findings` | List all tool results recorded so far |
+| `/raw` | Show full raw output of the last tool run |
+| `/phase <name>` | Jump to a phase: `recon` / `enumeration` / `exploitation` / `post-exploitation` |
+| `/target <ip>` | Change the target mid-session |
+| `/improvised` | Show log of web-search escalation commands |
+| `/sessions` | List all saved sessions |
 | `/load <id>` | Load a previous session |
-| `/note <text>` | Add a freeform note |
-| `/model` | Show current provider/model info |
-| `/target <ip>` | Change target mid-session |
-| `/clear` | Clear screen |
-| `/exit` | Save & quit |
+| `/history` | Show conversation history |
+| `/note <text>` | Save a free-form note |
+| `/model` | Show current provider + model info |
+| `/clear` | Clear the screen |
+| `/help` | Show help |
+| `/exit` | Save session and quit |
 
 ---
 
-## Tool Registry
+## 🧰 Built-in CTF Tool Registry
 
-### Recon
+### 🔍 Recon
 | Tool | Risk | Description |
 |---|---|---|
-| `nmap_scan` | SAFE | Port scan + service detection |
-| `whatweb_scan` | SAFE | Web technology fingerprinting |
-| `netcat_banner` | SAFE | Service banner grab |
+| `nmap_scan` | ✅ SAFE | Port scan + service detection |
+| `whatweb_scan` | ✅ SAFE | Web technology fingerprinting |
+| `netcat_banner` | ✅ SAFE | Grab service banners |
 
-### Enumeration
+### 🗂️ Enumeration
 | Tool | Risk | Description |
 |---|---|---|
-| `gobuster_dir` | SAFE | Directory/file brute-force |
-| `ffuf_fuzz` | SAFE | Fast web fuzzer (FUZZ keyword) |
-| `nikto_scan` | SAFE | Web vulnerability scan |
-| `searchsploit` | SAFE | Exploit-DB search |
-| `curl_fetch` | SAFE | HTTP requests |
-| `enum4linux` | SAFE | SMB/NetBIOS enumeration |
-| `smbclient_list` | SAFE | SMB share listing |
-| `wfuzz_fuzz` | SAFE | Web fuzzer (alternative) |
+| `gobuster_dir` | ✅ SAFE | Directory/file brute-force |
+| `ffuf_fuzz` | ✅ SAFE | Fast web fuzzer (FUZZ keyword in URL) |
+| `nikto_scan` | ✅ SAFE | Web vulnerability scanner |
+| `searchsploit` | ✅ SAFE | Search Exploit-DB for CVEs |
+| `curl_fetch` | ✅ SAFE | Custom HTTP requests |
+| `enum4linux` | ✅ SAFE | SMB/NetBIOS enumeration |
+| `smbclient_list` | ✅ SAFE | Browse SMB shares |
+| `wfuzz_fuzz` | ✅ SAFE | Web fuzzer (alternative) |
 
-### Exploitation
+### 💥 Exploitation
 | Tool | Risk | Description |
 |---|---|---|
-| `ssh_try` | **CONFIRM** | Single SSH credential test |
-| `hydra_bruteforce` | **CONFIRM** | Credential brute-force |
-| `sqlmap_scan` | **CONFIRM** | SQL injection scanner |
+| `ssh_try` | ⚠️ CONFIRM | Single SSH credential attempt |
+| `hydra_bruteforce` | ⚠️ CONFIRM | Credential brute-force |
+| `sqlmap_scan` | ⚠️ CONFIRM | SQL injection scanner |
 
-### Post-Exploitation
+### 🏴 Post-Exploitation
 | Tool | Risk | Description |
 |---|---|---|
-| `find_suid` | SAFE | Find SUID binaries |
-| `linpeas_run` | **CONFIRM** | LinPEAS privilege escalation enum |
+| `find_suid` | ✅ SAFE | Find SUID binaries for privesc |
+| `linpeas_run` | ⚠️ CONFIRM | LinPEAS privilege escalation enum |
+
+> ⚠️ **CONFIRM** tools pause the loop and ask `[p]roceed / [s]top` before running. Rejections are fed back to the model so it reasons about an alternative.
 
 ---
 
-## Risk Gate
-
-**SAFE tools** run immediately. **CONFIRM tools** pause with:
+## 🛡️ Risk Gate
 
 ```
   [CONFIRM] Tool: hydra_bruteforce
-    target = 10.10.10.5
+    target  = 10.10.10.5
     service = ssh
     passlist = /usr/share/wordlists/rockyou.txt
 
   [CONFIRM] Run 'hydra_bruteforce'? [p]roceed / [s]top :
 ```
 
-Rejections are logged in state and fed back to the model, which then reasons about an alternative approach.
-
 ---
 
-## Escalation Chain
+## 🔁 Escalation Chain
 
 When no registered tool covers the need:
 
-1. Model drafts a search query
-2. HorNet searches DuckDuckGo (no API key)
-3. Model proposes one exact shell command
-4. User prompted `[a]ccept / [n]ot`
-5. On accept: runs once, logged to `~/.hornet/logs/session_improvised.log`
-6. Raw material for future permanent tool registration (manual step)
+```
+1.  Model drafts a search query
+2.  HorN3t searches DuckDuckGo (no API key needed)
+3.  Model reads results and proposes ONE exact shell command
+4.  You are prompted: [a]ccept / [n]ot
+5.  On accept → runs once → logged to ~/.hornet/logs/session_improvised.log
+6.  NOT auto-registered — stays a manual, reviewed promotion step
+```
 
 ---
 
-## Session Persistence
+## 📁 Session Persistence
 
-Sessions are stored as JSON in `~/.hornet/sessions/session_<id>.json`.  
-On next launch, HorNet asks to resume the latest session.
+Sessions are saved to `~/.hornet/sessions/session_<id>.json`.  
+On next launch HorN3t asks to resume the latest session.
 
 ```bash
+# List sessions
 hnet --list-sessions
+
+# Load specific session
 hnet --load abc12345
 ```
 
-The improvised command log lives at `~/.hornet/logs/session_improvised.log`.
+---
+
+## ⚙️ Config Priority
+
+```
+1. CLI flags        --model, --local, --online, --target
+2. Env variables    HNET_MODE, HNET_API_KEY, HNET_MODEL, HNET_BASE_URL
+3. hnet.config.json (in CWD or home dir)
+4. Defaults         local Ollama on localhost:11434, model=llama3
+```
 
 ---
 
-## Adding a New Tool
+## 📦 Project Layout
 
-Open `hornet/tools.py` and add a `ToolDef` to `build_registry()`:
+```
+HorN3t/
+├── hornet/
+│   ├── cli.py            → hnet entry point + REPL + /commands
+│   ├── agent.py          → agentic reasoning loop
+│   ├── model_client.py   → OpenAI-compatible HTTP client (stdlib only)
+│   ├── config.py         → multi-source config loader
+│   ├── state.py          → session state + JSON persistence
+│   ├── tools.py          → CTF tool registry (16 tools + parsers)
+│   ├── risk_gate.py      → SAFE / CONFIRM gating logic
+│   ├── escalation.py     → web search → propose → run-once chain
+│   └── ui.py             → ANSI terminal output helpers
+├── hnet.config.json      → sample config (edit this)
+├── .env.example          → env var reference
+└── pyproject.toml        → pip package (zero runtime deps)
+```
+
+---
+
+## ➕ Adding a Custom Tool
+
+Open [`hornet/tools.py`](hornet/tools.py) and add to `build_registry()`:
 
 ```python
+from hornet.tools import ToolDef, Risk
+
 reg.register(ToolDef(
     name="my_tool",
-    description="What it does (shown to the model).",
-    phase=["enumeration"],
-    risk=Risk.SAFE,          # or Risk.CONFIRM
+    description="What it does — shown to the AI for tool selection.",
+    phase=["enumeration"],           # recon / enumeration / exploitation / post-exploitation
+    risk=Risk.SAFE,                  # or Risk.CONFIRM
     schema={
         "target": {"type": "str", "description": "Target host", "required": True},
     },
     executor=lambda args, state: _run(["mytool", args["target"]]),
-    parser=None,             # or a callable(raw, state) -> summary
+    parser=None,                     # optional: callable(raw, state) -> summary string
 ))
 ```
 
@@ -222,36 +309,15 @@ No other file needs to change.
 
 ---
 
-## Config Priority
+## 📜 License
 
-1. CLI flags (`--model`, `--local`, `--online`)
-2. Environment variables (`HNET_*`)
-3. `hnet.config.json` in CWD or home dir
-4. Built-in defaults (local Ollama, `llama3`)
+MIT — free to use, modify, and distribute.
 
 ---
 
-## Project Layout
+<div align="center">
 
-```
-hornet/
-  __init__.py       package + version
-  cli.py            entry point, argparse, REPL, /commands
-  agent.py          agentic loop (system prompt, step, escalation trigger)
-  model_client.py   OpenAI-compatible HTTP client (stdlib urllib)
-  config.py         multi-source config loader
-  state.py          session state + JSON persistence
-  tools.py          tool registry + all executors + parsers
-  risk_gate.py      SAFE/CONFIRM gating logic
-  escalation.py     web search → command proposal → execute-once flow
-  ui.py             ANSI terminal output helpers
-pyproject.toml
-hnet.config.json    sample config
-.env.example        sample env vars
-```
+**Made for CTF players on Kali Linux 🐉**  
+[Ghost-101-ui](https://github.com/Ghost-101-ui) · [HorN3t](https://github.com/Ghost-101-ui/HorN3t)
 
----
-
-## License
-
-MIT
+</div>
